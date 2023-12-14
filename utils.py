@@ -14,21 +14,22 @@ def cls_pooling(model_output):
     return model_output.last_hidden_state[:, 0]
 
 def get_embeddings(text_list):
-    text=str(text_list)
-    prompt="Give a generic information on the subject under 80 words."
-    # skip_len=len(prompt)
-    prompt+=text
-    llm_tokenize,llm_model,tokenizer,model=load_model()
-    
+    # text=str(text_list)
+    # prompt="Give a generic information on the subject under 80 words."
+    # # skip_len=len(prompt)
+    # prompt+=text
+    # llm_tokenize,llm_model,tokenizer,model=load_model()
+    _1,_2,tokenizer,model=load_model()
     encoded_input = tokenizer(
         text_list, padding=True, truncation=True, return_tensors="tf"
     )
     encoded_input = {k: v for k, v in encoded_input.items()}
     model_output = model(**encoded_input)
-    generate_text(prompt,llm_model,llm_tokenize)
+    # generate_text(prompt,llm_model,llm_tokenize)
     return cls_pooling(model_output)
+
 def semantics(query):
-  
+
     # Load the dataset from the saved directory
     loaded_dataset = Dataset.load_from_disk('embeddings_dataset_folder')
 
@@ -47,13 +48,24 @@ def semantics(query):
     samples_df.sort_values("scores", ascending=False, inplace=True)
     Title=[]
     rows=[]
+    prompt="Give a generic information on the subject under 80 words."
+    # skip_len=len(prompt)
+    prompt+=query
+    llm_tokenize,llm_model,_1,_2=load_model()
+    flag=0
+
     for _, row in samples_df.iterrows():
         # print(f"Series Title: {row.Title}")
         # print(f"Overview: {row.Abstract}")
-
-        Title.append(row.Title)
-        rows.append(row.Abstract)
-        
+        print(row.scores)
+        if row.scores<50:
+            flag=1
+            Title.append(row.Title)
+            rows.append(row.Abstract)
+    if flag==1:
+        generate_text(prompt,llm_model,llm_tokenize)
+    if flag==0:
+        st.warning("No relevant Information available")
     return Title,rows
 def generate_text(input_text, model, tokenizer, max_length=250):
     # Encode the input text
@@ -68,7 +80,7 @@ def generate_text(input_text, model, tokenizer, max_length=250):
     output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
     output_text=output_text[skip_len:]
     output_text=trim_to_full_sentence(output_text,300)
-    st.text_area("General Knowledge related to your search:",output_text,height=250)
+    st.text_area("General Knowledge related to your search:",output_text+' .',height=250)
 
     st.markdown("----")
     
@@ -90,8 +102,6 @@ def trim_to_full_sentence(text, word_limit):
 
     # Return the text up to the last complete sentence
     return trimmed_text[:last_period + 1]
-
- 
     
 @st.cache_resource(show_spinner=False)
 def load_model(spinner=False):

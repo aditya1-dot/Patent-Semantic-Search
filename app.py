@@ -19,16 +19,18 @@ if st.button("Send"):
         # For example, using a predefined pipeline:
         # response = nlp_model(question=user_input, context="The context text for the model")
         # answer = response["answer"]
+        
+        # title,abstract=semantics(user_input)
         title,abstract=semantics(user_input)
-
         # answer = "This is where the answer from the chatbot would appear."  # Placeholder
+        
         for Title,Abstract in zip(title,abstract):
-            st.markdown(f"**Title:** ***{Title}***")
-            st.markdown(f'**Abstract:** {Abstract}')
-            st.markdown("----")
-    else:
-        st.warning("Please enter a question to continue.")
+                st.markdown(f"**Title:** ***{Title}***")
+                st.markdown(f'**Abstract:** {Abstract}')
+                st.markdown("----")
+        # else:
+        #     st.warning("Query not in the knowledge of Model.")
 
 # Footer
 st.sidebar.markdown("---")
-st.sidebar.write("1NeuRon")
+
