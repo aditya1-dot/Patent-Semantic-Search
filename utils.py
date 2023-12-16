@@ -48,9 +48,9 @@ def semantics(query):
     samples_df.sort_values("scores", ascending=False, inplace=True)
     Title=[]
     rows=[]
-    prompt="Give a generic information on the subject under 80 words."
+    # prompt="Give a generic information on the subject under 80 words."
     # skip_len=len(prompt)
-    prompt+=query
+    # prompt+=query
     llm_tokenize,llm_model,_1,_2=load_model()
     flag=0
 
@@ -62,27 +62,50 @@ def semantics(query):
             flag=1
             Title.append(row.Title)
             rows.append(row.Abstract)
-    if flag==1:
-        generate_text(prompt,llm_model,llm_tokenize)
-    if flag==0:
-        st.warning("No relevant Information available")
-    return Title,rows
-def generate_text(input_text, model, tokenizer, max_length=250):
+    Title=reversed(Title)
+    rows=reversed(rows)
+    result = ""
+    if Title:
+        for t,a in zip(Title,rows):
+            result+="\n"
+            result+="--"*60
+            print(f'{t}\n{a}')
+            result += "\nTitles:\n" +t + "\n\n"
+            result += "Abstracts:\n" +a+"\n"
+            
+        
+        passing = f"Give information in on\t{query}."
+        skin_len=len(passing)+6
+        load_model()
+        llm_ans=generate_text(passing, llm_model, llm_tokenize)
+        final=str(llm_ans[skin_len:])+"\n"+result
+    else:
+        final =generate_text(query,llm_model,llm_tokenize)
+
+    return final     
+    # if flag==1:
+        
+    #     Title=reversed(Title)
+    #     rows=reversed(rows)
+    #     passing="give a generic information about{query} in 70 words."
+    #     generate_text(passing,llm_model,llm_tokenize)
+    # if flag==0:
+    #     st.warning("No relevant Information available")
+    # return Title,rows
+def generate_text(input_text, model, tokenizer, max_length=400):
     # Encode the input text
     # dy_text=st.empty()
     skip_len=len(input_text)
     input_ids = tokenizer.encode(input_text, return_tensors='pt')
 
     # Generate output text
-    output_ids = model.generate(input_ids, max_length=max_length,temperature=0.7,do_sample=True)
+    output_ids = model.generate(input_ids, max_length=max_length,temperature=0.4,do_sample=True)
 
     # Decode the output text
     output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-    output_text=output_text[skip_len:]
-    output_text=trim_to_full_sentence(output_text,300)
-    st.text_area("General Knowledge related to your search:",output_text+' .',height=250)
-
-    st.markdown("----")
+    
+    return output_text
+    # st.markdown("----")
     
 def trim_to_full_sentence(text, word_limit):
     words = text.split()
